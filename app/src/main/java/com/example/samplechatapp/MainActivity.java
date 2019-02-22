@@ -7,14 +7,17 @@
 
 package com.example.samplechatapp;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.constraint.ConstraintLayout;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.AdapterView;
 import android.widget.ListView;
 
 import java.util.ArrayList;
@@ -32,6 +35,7 @@ public class MainActivity extends AppCompatActivity {
     // Methods
     private void refresh() {
         // TODO: Make this feel less like it refreshes everything and make it just update the list
+
         Intent intent = new Intent(this, MainActivity.class);
         finish();
         startActivity(intent);
@@ -49,10 +53,21 @@ public class MainActivity extends AppCompatActivity {
         mSwipeRefresh = (SwipeRefreshLayout) findViewById(R.id.swipeRefresh);
         mChatRoomsList = (ListView) findViewById(R.id.chatRoomListView);
 
-        // Add adapter to the lidt of chat rooms
+        // Add adapter to the list of chat rooms
         List<ChatRoomInfo> chatRooms = new ArrayList<>();
         mChatRoomAdapter = new ChatRoomAdapter(this, R.layout.chat_room_info, chatRooms);
         mChatRoomsList.setAdapter(new ChatRoomAdapter(this, R.layout.chat_room_info, chatRooms));
+
+        // Add onClick functionality to the list items
+        mChatRoomsList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                ChatRoomInfo chatRoomInfo = mChatRoomAdapter.getItem(position);
+                Intent intent = new Intent(getBaseContext(), ChatRoomActivity.class);
+                intent.putExtra("testName", chatRoomInfo.getName());
+                startActivity(intent);
+            }
+        });
 
         // Add chatrooms for testing
         mChatRoomAdapter.add(new ChatRoomInfo("Main Room", "today"));

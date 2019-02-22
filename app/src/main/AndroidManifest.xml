@@ -9,9 +9,14 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".SplashActivity"
-            android:theme="@style/SplashTheme"
-            android:noHistory="true">
+        <activity
+            android:name=".ChatRoomActivity"
+            android:parentActivityName=".MainActivity"
+            android:theme="@style/AppTheme"></activity>
+        <activity
+            android:name=".SplashActivity"
+            android:noHistory="true"
+            android:theme="@style/SplashTheme">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
