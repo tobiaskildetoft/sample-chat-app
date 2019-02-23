@@ -7,6 +7,9 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.TextView;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 
 public class ChatRoomAdapter extends ArrayAdapter<ChatRoomInfo> {
@@ -26,7 +29,10 @@ public class ChatRoomAdapter extends ArrayAdapter<ChatRoomInfo> {
         ChatRoomInfo chatRoom = getItem(position);
 
         chatRoomName.setText(chatRoom.getName());
-        lastMessageAtView.setText(chatRoom.getLastMessage());
+        DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+        Date lastMessageDate = new Date(chatRoom.getTimestamp());
+        String lastMessageAt = DateFormat.getInstance().format(lastMessageDate);
+        lastMessageAtView.setText("Last message at: " + lastMessageAt);
 
         return convertView;
     }

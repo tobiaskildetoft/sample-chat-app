@@ -2,14 +2,14 @@ package com.example.samplechatapp;
 
 public class ChatRoomInfo {
     private String name;
-    private String lastMessage;
+    private long timestamp;
 
     public ChatRoomInfo(){
     }
 
-    public ChatRoomInfo(String name, String lastMessage) {
+    public ChatRoomInfo(String name, long timestamp) {
         this.name = name;
-        this.lastMessage = lastMessage;
+        this.timestamp = timestamp;
     }
 
     public String getName(){
@@ -20,12 +20,12 @@ public class ChatRoomInfo {
         this.name = name;
     }
 
-    public String getLastMessage(){
-        return lastMessage;
+    public long getTimestamp(){
+        return timestamp;
     }
 
-    public void setLastMessage(String lastMessage){
-        this.lastMessage = lastMessage;
+    public void setTimestamp(long timestamp){
+        this.timestamp = timestamp;
     }
 
 

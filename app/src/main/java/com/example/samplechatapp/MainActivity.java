@@ -23,8 +23,16 @@ import android.widget.ListView;
 import android.widget.Toast;
 
 import com.firebase.ui.auth.AuthUI;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.Query;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.QuerySnapshot;
+import com.google.firebase.firestore.core.OrderBy;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -33,7 +41,7 @@ import java.util.List;
 public class MainActivity extends AppCompatActivity {
 
     // Constants for activity results
-    final static int RC_SIGN_IN = 1;
+    private final static int RC_SIGN_IN = 1;
 
     // member variables for the Views in the layout
     private SwipeRefreshLayout mSwipeRefresh;
@@ -42,7 +50,7 @@ public class MainActivity extends AppCompatActivity {
     private ChatRoomAdapter mChatRoomAdapter;
 
 
-    // Methods
+    // Private methods
     private void refresh() {
         // TODO: Make this feel less like it refreshes everything and make it just update the list
 
@@ -55,6 +63,7 @@ public class MainActivity extends AppCompatActivity {
     // member variables for Firebase objects
     private FirebaseAuth mFirebaseAuth;
     private FirebaseAuth.AuthStateListener mAuthStateListener;
+    private FirebaseFirestore mDatabase;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -76,14 +85,14 @@ public class MainActivity extends AppCompatActivity {
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 ChatRoomInfo chatRoomInfo = mChatRoomAdapter.getItem(position);
                 Intent intent = new Intent(getBaseContext(), ChatRoomActivity.class);
-                intent.putExtra("testName", chatRoomInfo.getName());
+                intent.putExtra("chatRoomName", chatRoomInfo.getName());
                 startActivity(intent);
             }
         });
 
         // Add chatrooms for testing
-        mChatRoomAdapter.add(new ChatRoomInfo("Main Room", "today"));
-        mChatRoomAdapter.add(new ChatRoomInfo("Extra Room", "yesterday"));
+        // mChatRoomAdapter.add(new ChatRoomInfo("Main Room", 0));
+        // mChatRoomAdapter.add(new ChatRoomInfo("Extra Room", 1));
 
 
         // Set up the listener that refreshes the view when user swipes
@@ -125,6 +134,9 @@ public class MainActivity extends AppCompatActivity {
 
         // Initialize an instance of FirebaseAuth to which the listener can be attached
         mFirebaseAuth = FirebaseAuth.getInstance();
+
+        // Instantiate the database
+        mDatabase = FirebaseFirestore.getInstance();
     }
 
     @Override
@@ -167,8 +179,23 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+
         // Add the listener to check whether user is signed in.
         mFirebaseAuth.addAuthStateListener(mAuthStateListener);
+
+        // Then populate the list of chat rooms from the database, ordered by timestamp
+        mDatabase.collection("chatrooms").orderBy("timestamp", Query.Direction.DESCENDING).get().addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
+            @Override
+            public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
+                mChatRoomAdapter.clear();
+                for (ChatRoomInfo chatRoom : queryDocumentSnapshots.toObjects(ChatRoomInfo.class)) {
+                    mChatRoomAdapter.add(chatRoom);
+                }
+                // Reattach the adapter to force the View to update.
+                mChatRoomsList.setAdapter(mChatRoomAdapter);
+            }
+        });
+
     }
 
     @Override

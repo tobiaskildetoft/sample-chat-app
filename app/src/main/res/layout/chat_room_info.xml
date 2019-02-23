@@ -12,6 +12,7 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
         android:layout_marginLeft="8dp"
+        android:textSize="24sp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         tools:text="Chat room name" />
@@ -20,10 +21,12 @@
         android:id="@+id/lastMessageAtView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginEnd="16dp"
-        android:layout_marginRight="16dp"
-        app:layout_constraintBaseline_toBaselineOf="@+id/chatRoomNameView"
-        app:layout_constraintEnd_toStartOf="@+id/imageView"
+        android:layout_marginStart="8dp"
+        android:layout_marginLeft="8dp"
+        android:layout_marginTop="8dp"
+        android:textSize="12sp"
+        app:layout_constraintStart_toStartOf="@+id/chatRoomNameView"
+        app:layout_constraintTop_toBottomOf="@+id/chatRoomNameView"
         tools:text="Last message at:" />
 
     <ImageView
@@ -35,7 +38,7 @@
         android:contentDescription="@null"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:srcCompat="@drawable/ic_chevron" />
+        app:srcCompat="@drawable/ic_chevron_48" />
 
 
 </android.support.constraint.ConstraintLayout>
