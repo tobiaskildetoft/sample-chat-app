@@ -2,4 +2,11 @@
     <string name="app_name">Sample Chat App</string>
     <string name="menu_refresh">Refresh</string>
     <string name="logout">Logout</string>
+    <string name="welcome">Welcome!</string>
+    <string name="sign_in_cancelled">Sign in cancelled!</string>
+    <string name="facebook_application_id" translatable="false">2352447475036631</string>
+    <!-- Facebook Application ID, prefixed by 'fb'. Enables Chrome Custom tabs. -->
+    <string name="facebook_login_protocol_scheme" translatable="false">fb2352447475036631</string>
+    <string name="facebook_app_id">2352447475036631</string>
+    <string name="fb_login_protocol_scheme">fb2352447475036631</string>
 </resources>
