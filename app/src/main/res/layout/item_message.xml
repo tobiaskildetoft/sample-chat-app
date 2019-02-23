@@ -14,6 +14,10 @@
 
         <ImageView
             android:id="@+id/avatarImageView"
+            android:adjustViewBounds="true"
+            android:maxHeight="16dp"
+            android:maxWidth="16dp"
+            android:scaleType="centerInside"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content" />
 
@@ -21,8 +25,10 @@
             android:id="@+id/nameTextView"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:layout_marginLeft="4dp"
             android:layout_weight="0"
-            android:textAppearance="?android:attr/textAppearanceSmall"
+            android:textSize="16sp"
             tools:text="Name" />
 
         <TextView
@@ -30,7 +36,9 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="0"
-            android:textAppearance="?android:attr/textAppearanceSmall"
+            android:layout_marginStart="4dp"
+            android:layout_marginLeft="4dp"
+            android:textSize="12sp"
             tools:text="Timestamp"/>
 
     </LinearLayout>

@@ -90,10 +90,6 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        // Add chatrooms for testing
-        // mChatRoomAdapter.add(new ChatRoomInfo("Main Room", 0));
-        // mChatRoomAdapter.add(new ChatRoomInfo("Extra Room", 1));
-
 
         // Set up the listener that refreshes the view when user swipes
         mSwipeRefresh.setOnRefreshListener(
@@ -114,11 +110,10 @@ public class MainActivity extends AppCompatActivity {
                 FirebaseUser user = firebaseAuth.getCurrentUser();
                 if (user != null) {
                     // User is logged in
-                    // TODO: create a method to initialize needed components on sign in
                 }
                 else {
                     // User is not logged in
-                    // TODO create a method to clean up on sign out
+                    mChatRoomAdapter.clear();
                     startActivityForResult(
                             AuthUI.getInstance()
                                     .createSignInIntentBuilder()
@@ -205,6 +200,5 @@ public class MainActivity extends AppCompatActivity {
         if (mAuthStateListener != null) {
             mFirebaseAuth.removeAuthStateListener(mAuthStateListener);
         }
-        // TODO: Cleanup other parts.
     }
 }
