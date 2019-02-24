@@ -49,10 +49,14 @@ public class MessageAdapter extends ArrayAdapter<ChatMessage> {
             messageTextView.setText(message.getText());
         }
         authorTextView.setText(message.getName());
-        DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm");
-        Date timestampDate = new Date(message.getTimestamp());
-        String timestampString = DateFormat.getInstance().format(timestampDate);
-        timestampTextView.setText(timestampString);
+        if (message.getTimestamp() >= 0) {
+            DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+            Date timestampDate = new Date(message.getTimestamp());
+            String timestampString = DateFormat.getInstance().format(timestampDate);
+            timestampTextView.setText(timestampString);
+        } else {
+            timestampTextView.setVisibility(View.GONE);
+        }
 
         if (message.getAvatarUrl() != null) {
             avatarImageView.setVisibility(View.VISIBLE);

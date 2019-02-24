@@ -10,6 +10,7 @@ import android.os.Environment;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.app.DialogFragment;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -207,6 +208,8 @@ public class ChatRoomActivity extends AppCompatActivity {
             } else if (resultCode == RESULT_CANCELED) {
                 Toast.makeText(this, "Sign in cancelled!", Toast.LENGTH_SHORT).show();
                 finish();
+            } else {
+                showError();
             }
         } else if (requestCode == RC_PHOTO_PICKER && resultCode == RESULT_OK) {
             Uri selectedImageUri = data.getData();
@@ -351,5 +354,10 @@ public class ChatRoomActivity extends AppCompatActivity {
         }
         detachDatabaseReadListener();
         mMessageAdapter.clear();
+    }
+
+    public void showError() {
+        DialogFragment dialog = new ErrorMessageFragment();
+        dialog.show(getSupportFragmentManager(), "ErrorMessage");
     }
 }

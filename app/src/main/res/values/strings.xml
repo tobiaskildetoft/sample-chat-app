@@ -11,4 +11,6 @@
     <string name="fb_login_protocol_scheme">fb2352447475036631</string>
     <string name="send_button_label">Send</string>
     <string name="pick_image_using">Pick image using</string>
+    <string name="log_in_error_message">Log in failed</string>
+    <string name="button_ok">OK</string>
 </resources>

@@ -24,15 +24,12 @@ public class ChatRoomAdapter extends ArrayAdapter<ChatRoomInfo> {
         }
 
         TextView chatRoomName = (TextView) convertView.findViewById(R.id.chatRoomNameView);
-        TextView lastMessageAtView = (TextView) convertView.findViewById(R.id.lastMessageAtView);
+        TextView descriptionView = (TextView) convertView.findViewById(R.id.descriptionView);
 
         ChatRoomInfo chatRoom = getItem(position);
 
         chatRoomName.setText(chatRoom.getName());
-        DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm");
-        Date lastMessageDate = new Date(chatRoom.getTimestamp());
-        String lastMessageAt = DateFormat.getInstance().format(lastMessageDate);
-        lastMessageAtView.setText("Last message at: " + lastMessageAt);
+        descriptionView.setText(chatRoom.getDescription());
 
         return convertView;
     }
