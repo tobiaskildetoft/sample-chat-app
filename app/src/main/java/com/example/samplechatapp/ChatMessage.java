@@ -19,6 +19,8 @@ public class ChatMessage {
         this.photoUrl = photoUrl;
     }
 
+    // TODO: negative timestamp for empty message
+
     public String getText() {
         return text;
     }

@@ -1,13 +1,22 @@
 package com.example.samplechatapp;
 
+import android.Manifest;
+import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.net.Uri;
+import android.os.Environment;
+import android.provider.MediaStore;
 import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.InputFilter;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -32,6 +41,10 @@ import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.security.Permission;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -47,6 +60,10 @@ public class ChatRoomActivity extends AppCompatActivity {
     private static final int RC_PHOTO_PICKER = 2;
 
     public static final int DEFAULT_MSG_LENGTH_LIMIT = 500;
+    private static final int MY_PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE = 1;
+
+    private boolean hasPermission;
+    private boolean hasAskedPermission;
 
     private String mChatRoomName;
     private String mUsername;
@@ -136,9 +153,13 @@ public class ChatRoomActivity extends AppCompatActivity {
         mPhotoPickerButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent intent = new Intent(Intent.ACTION_PICK,
+                Intent localPhotoIntent = new Intent(Intent.ACTION_PICK,
                         android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-                startActivityForResult(Intent.createChooser(intent, "Pick image using"), RC_PHOTO_PICKER);
+                Intent cameraIntent = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
+                Intent chooserIntent = Intent.createChooser(localPhotoIntent,
+                        getString(R.string.pick_image_using));
+                chooserIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS, new Intent[] { cameraIntent });
+                startActivityForResult(chooserIntent, RC_PHOTO_PICKER);
             }
         });
 
@@ -157,7 +178,7 @@ public class ChatRoomActivity extends AppCompatActivity {
                 }
                 else {
                     // User is not logged in
-                    // TODO create a method to clean up on sign out
+                    onSignedOutCleanup();
                     startActivityForResult(
                             AuthUI.getInstance()
                                     .createSignInIntentBuilder()
@@ -189,29 +210,52 @@ public class ChatRoomActivity extends AppCompatActivity {
             }
         } else if (requestCode == RC_PHOTO_PICKER && resultCode == RESULT_OK) {
             Uri selectedImageUri = data.getData();
-            final StorageReference photoRef = mChatPhotosStorageReference.child(selectedImageUri.getLastPathSegment());
-            photoRef.putFile(selectedImageUri).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
-                @Override
-                public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
-                    photoRef.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
-                        @Override
-                        public void onSuccess(Uri uri) {
-                            long time = System.currentTimeMillis();
-                            ChatMessage chatMessage = new ChatMessage(null, mUsername,
-                                    time, mUserAvatarUrl, uri.toString());
-                            mDatabase.collection("chatrooms")
-                                    .document(mChatRoomName)
-                                    .collection("messages").add(chatMessage);
-                            mDatabase.collection("chatrooms")
-                                    .document(mChatRoomName).update("timestamp", time);
-                        }
-                    });
+            if (selectedImageUri == null) {
+                if (ContextCompat.checkSelfPermission(this,
+                        Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                        == PackageManager.PERMISSION_GRANTED) {
+                    selectedImageUri = uriFromImage(this, (Bitmap) data.getExtras().get("data"));
                 }
-            });
+            }
+            if (selectedImageUri != null) {
+                final StorageReference photoRef = mChatPhotosStorageReference.child(selectedImageUri.getLastPathSegment());
+                photoRef.putFile(selectedImageUri).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                    @Override
+                    public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                        photoRef.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
+                            @Override
+                            public void onSuccess(Uri uri) {
+                                long time = System.currentTimeMillis();
+                                ChatMessage chatMessage = new ChatMessage(null, mUsername,
+                                        time, mUserAvatarUrl, uri.toString());
+                                mDatabase.collection("chatrooms")
+                                        .document(mChatRoomName)
+                                        .collection("messages").add(chatMessage);
+                                mDatabase.collection("chatrooms")
+                                        .document(mChatRoomName).update("timestamp", time);
+                            }
+                        });
+                    }
+                });
+            }
         }
     }
 
+    public Uri uriFromImage(Context inContext, Bitmap image) {
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        image.compress(Bitmap.CompressFormat.JPEG, 100, bytes);
+        String path = MediaStore.Images.Media.insertImage(inContext.getContentResolver(), image, "Title", null);
+        return Uri.parse(path);
+    }
+
     private void onSignedInInitialize(String displayName, Uri photoUrl) {
+        if (ContextCompat.checkSelfPermission(this,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                    MY_PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE);
+        }
         mUsername = displayName;
         if (photoUrl != null) {
             mUserAvatarUrl = photoUrl.toString();
@@ -219,16 +263,34 @@ public class ChatRoomActivity extends AppCompatActivity {
         attachDatabaseListener();
     }
 
-    // TODO: Make the listener not react multiple times to picture uploads
     private void attachDatabaseListener() {
         if (mDatabaseListener == null) {
             mDatabaseListener = new EventListener<QuerySnapshot>() {
                 @Override
                 public void onEvent(@Nullable QuerySnapshot queryDocumentSnapshots, @Nullable FirebaseFirestoreException e) {
-                    for (DocumentChange dc : queryDocumentSnapshots.getDocumentChanges()) {
-                        if (dc.getType() == ADDED && !dc.getDocument().getMetadata().hasPendingWrites()) {
-                            ChatMessage chatMessage = dc.getDocument().toObject(ChatMessage.class);
-                            mMessageAdapter.add(chatMessage);
+                    if (e == null) {
+                        // No errors, go ahead and use result
+                        for (DocumentChange dc : queryDocumentSnapshots.getDocumentChanges()) {
+                            if (dc.getType() == ADDED) {
+                                ChatMessage chatMessage = dc.getDocument().toObject(ChatMessage.class);
+                                boolean exists = false;
+                                // Check if the message has already been added to the list.
+                                // Only compares user and timestamp as same user should not be able to post
+                                // two message with same timestamp anyway.
+                                for (int i = mMessageAdapter.getCount() - 1; i >= 0; i--) {
+                                    if (mMessageAdapter.getItem(i).getTimestamp() > chatMessage.getTimestamp()) {
+                                        break;
+                                    } else if (mMessageAdapter.getItem(i).getTimestamp() == chatMessage.getTimestamp()
+                                            && mMessageAdapter.getItem(i).getName() == chatMessage.getName()) {
+                                        exists = true;
+                                    }
+                                }
+                                if (!exists) {
+                                    mMessageAdapter.add(chatMessage);
+                                }
+
+
+                            }
                         }
                     }
                 }
@@ -253,6 +315,7 @@ public class ChatRoomActivity extends AppCompatActivity {
         switch (id) {
             case R.id.menu_logout:
                 // Sign out the user
+                onSignedOutCleanup();
                 AuthUI.getInstance().signOut(this);
                 return true;
             default:
@@ -268,6 +331,7 @@ public class ChatRoomActivity extends AppCompatActivity {
 
     private void onSignedOutCleanup() {
         mUsername = "Anonymous";
+        mUserAvatarUrl = null;
         mMessageAdapter.clear();
         detachDatabaseReadListener();
     }
@@ -275,6 +339,7 @@ public class ChatRoomActivity extends AppCompatActivity {
     private void detachDatabaseReadListener() {
         if (mListenerRegistration != null) {
             mListenerRegistration.remove();
+            mListenerRegistration = null;
         }
     }
 

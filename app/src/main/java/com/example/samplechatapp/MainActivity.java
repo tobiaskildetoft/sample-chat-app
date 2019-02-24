@@ -7,11 +7,15 @@
 
 package com.example.samplechatapp;
 
+import android.Manifest;
 import android.app.Activity;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.constraint.ConstraintLayout;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -42,6 +46,7 @@ public class MainActivity extends AppCompatActivity {
 
     // Constants for activity results
     private final static int RC_SIGN_IN = 1;
+    private static final int MY_PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE = 1;
 
     // member variables for the Views in the layout
     private SwipeRefreshLayout mSwipeRefresh;
@@ -177,6 +182,14 @@ public class MainActivity extends AppCompatActivity {
 
         // Add the listener to check whether user is signed in.
         mFirebaseAuth.addAuthStateListener(mAuthStateListener);
+
+        if (ContextCompat.checkSelfPermission(this,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                    MY_PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE);
+        }
 
         // Then populate the list of chat rooms from the database, ordered by timestamp
         mDatabase.collection("chatrooms").orderBy("timestamp", Query.Direction.DESCENDING).get().addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
