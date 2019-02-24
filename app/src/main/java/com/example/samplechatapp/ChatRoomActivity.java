@@ -6,9 +6,11 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
+import android.support.annotation.RequiresApi;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.content.ContextCompat;
@@ -21,6 +23,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.AbsListView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
@@ -37,6 +40,7 @@ import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.ListenerRegistration;
+import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
@@ -59,9 +63,14 @@ public class ChatRoomActivity extends AppCompatActivity {
     // Constants for activity results
     private final static int RC_SIGN_IN = 1;
     private static final int RC_PHOTO_PICKER = 2;
+    private static final int MY_PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE = 1;
 
     public static final int DEFAULT_MSG_LENGTH_LIMIT = 500;
-    private static final int MY_PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE = 1;
+    public static final int NUMBER_OF_MESSAGES_TO_LOAD = 50;
+
+    private boolean isStarting;
+    private boolean isLoading;
+
 
     private boolean hasPermission;
     private boolean hasAskedPermission;
@@ -69,6 +78,8 @@ public class ChatRoomActivity extends AppCompatActivity {
     private String mChatRoomName;
     private String mUsername;
     private String mUserAvatarUrl;
+    private long mTimeOpened;
+    private long mOldestLoaded;
 
     // Member variables for Views
     private ListView mMessageListView;
@@ -92,6 +103,8 @@ public class ChatRoomActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chat_room);
 
+        isStarting = true;
+
         mUsername = "Anonymous";
 
         mChatRoomName = getIntent().getExtras().getString("chatRoomName", null);
@@ -105,6 +118,22 @@ public class ChatRoomActivity extends AppCompatActivity {
         mPhotoPickerButton = (ImageButton) findViewById(R.id.photoPickerButton);
         mMessageEditText = (EditText) findViewById(R.id.messageEditText);
         mSendButton = (Button) findViewById(R.id.sendButton);
+
+        // Add scroll to add items
+        mMessageListView.setOnScrollListener(new AbsListView.OnScrollListener() {
+            @Override
+            public void onScrollStateChanged(AbsListView view, int scrollState) {
+
+            }
+
+            @Override
+            public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
+                if (mMessageListView.getFirstVisiblePosition() == 0 && !isStarting && !isLoading && !(mOldestLoaded < 0)) {
+                    isLoading = true;
+                    populateMessageList();
+                }
+            }
+        });
 
         // Add adapter to the message list
         List<ChatMessage> chatMessages = new ArrayList<>();
@@ -263,6 +292,7 @@ public class ChatRoomActivity extends AppCompatActivity {
         if (photoUrl != null) {
             mUserAvatarUrl = photoUrl.toString();
         }
+        populateMessageList();
         attachDatabaseListener();
     }
 
@@ -276,20 +306,22 @@ public class ChatRoomActivity extends AppCompatActivity {
                         for (DocumentChange dc : queryDocumentSnapshots.getDocumentChanges()) {
                             if (dc.getType() == ADDED) {
                                 ChatMessage chatMessage = dc.getDocument().toObject(ChatMessage.class);
-                                boolean exists = false;
-                                // Check if the message has already been added to the list.
-                                // Only compares user and timestamp as same user should not be able to post
-                                // two message with same timestamp anyway.
-                                for (int i = mMessageAdapter.getCount() - 1; i >= 0; i--) {
-                                    if (mMessageAdapter.getItem(i).getTimestamp() > chatMessage.getTimestamp()) {
-                                        break;
-                                    } else if (mMessageAdapter.getItem(i).getTimestamp() == chatMessage.getTimestamp()
-                                            && mMessageAdapter.getItem(i).getName() == chatMessage.getName()) {
-                                        exists = true;
+                                // The listener should only care about new messages
+                                if (chatMessage.getTimestamp() > mTimeOpened) {
+                                    boolean exists = false;
+                                    // Check if the message has already been added to the list.
+                                    // Only compares user and timestamp as same user should not be able to post
+                                    // two message with same timestamp anyway.
+                                    for (int i = mMessageAdapter.getCount() - 1; i >= 0; i--) {
+                                        if (mMessageAdapter.getItem(i).getTimestamp() == chatMessage.getTimestamp()
+                                                && mMessageAdapter.getItem(i).getName().equals(chatMessage.getName())) {
+                                            exists = true;
+                                            break;
+                                        }
                                     }
-                                }
-                                if (!exists) {
-                                    mMessageAdapter.add(chatMessage);
+                                    if (!exists) {
+                                        mMessageAdapter.add(chatMessage);
+                                    }
                                 }
 
 
@@ -329,6 +361,8 @@ public class ChatRoomActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        mTimeOpened = System.currentTimeMillis();
+        mOldestLoaded = mTimeOpened;
         mFirebaseAuth.addAuthStateListener(mAuthStateListener);
     }
 
@@ -359,5 +393,29 @@ public class ChatRoomActivity extends AppCompatActivity {
     public void showError() {
         DialogFragment dialog = new ErrorMessageFragment();
         dialog.show(getSupportFragmentManager(), "ErrorMessage");
+    }
+
+    public void populateMessageList() {
+        isLoading = true;
+        mDatabase.collection("chatrooms")
+                .document(mChatRoomName)
+                .collection("messages")
+                .orderBy("timestamp", Query.Direction.DESCENDING)
+                .startAfter(mOldestLoaded)
+                .limit(NUMBER_OF_MESSAGES_TO_LOAD).get().addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
+            @Override
+            public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
+                for (ChatMessage chatMessage : queryDocumentSnapshots.toObjects(ChatMessage.class)) {
+                    mMessageAdapter.insert(chatMessage, 0);
+                }
+                // Go to the appropriate place in the list to not trigger the loading of more messages.
+                mMessageListView.setSelection(queryDocumentSnapshots.size()-1);
+                // Update timestamp of oldest loaded message
+                mOldestLoaded = mMessageAdapter.getItem(0).getTimestamp();
+                // Inform the OnScrollListener that the app is neither starting nor loading any more.
+                isStarting = false;
+                isLoading = false;
+            }
+        });
     }
 }

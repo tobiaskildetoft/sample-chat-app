@@ -197,7 +197,9 @@ public class MainActivity extends AppCompatActivity {
         }
 
         // Then populate the list of chat rooms from the database, ordered by timestamp
-        mDatabase.collection("chatrooms").orderBy("timestamp", Query.Direction.DESCENDING).get().addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
+        mDatabase.collection("chatrooms")
+                .orderBy("timestamp", Query.Direction.DESCENDING).get()
+                .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
             @Override
             public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
                 mChatRoomAdapter.clear();

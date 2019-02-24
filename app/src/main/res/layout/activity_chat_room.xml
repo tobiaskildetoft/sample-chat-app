@@ -18,7 +18,7 @@
         android:stackFromBottom="true"
         android:divider="@android:color/transparent"
         android:dividerHeight="10.0sp"
-        android:transcriptMode="alwaysScroll"
+        android:transcriptMode="normal"
         tools:listitem="@layout/item_message"/>
 
     <LinearLayout
