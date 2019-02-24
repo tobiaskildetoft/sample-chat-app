@@ -28,7 +28,9 @@
         android:layout_alignParentBottom="true"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true"
-        android:orientation="horizontal">
+        android:orientation="horizontal"
+        android:focusable="true"
+        android:focusableInTouchMode="true">
 
         <ImageButton
             android:id="@+id/photoPickerButton"
@@ -41,7 +43,10 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_gravity="center_vertical"
-            android:layout_weight="1" />
+            android:layout_weight="1"
+            android:inputType="text"
+            android:singleLine="true"
+            android:imeOptions="actionDone"/>
 
         <Button
             android:id="@+id/sendButton"

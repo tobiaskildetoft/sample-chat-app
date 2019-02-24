@@ -20,9 +20,11 @@ import android.text.Editable;
 import android.text.InputFilter;
 import android.text.TextWatcher;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.inputmethod.EditorInfo;
 import android.widget.AbsListView;
 import android.widget.Button;
 import android.widget.EditText;
@@ -160,6 +162,18 @@ public class ChatRoomActivity extends AppCompatActivity {
             }
         });
         mMessageEditText.setFilters(new InputFilter[]{new InputFilter.LengthFilter(DEFAULT_MSG_LENGTH_LIMIT)});
+
+        // Make the return key send the message
+        mMessageEditText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                if (actionId == EditorInfo.IME_ACTION_DONE && mSendButton.isEnabled()) {
+                    mSendButton.performClick();
+                    return true;
+                }
+                return false;
+            }
+        });
 
         // Send button sends a message and clears the EditText
         mSendButton.setOnClickListener(new View.OnClickListener() {
@@ -411,7 +425,9 @@ public class ChatRoomActivity extends AppCompatActivity {
                 // Go to the appropriate place in the list to not trigger the loading of more messages.
                 mMessageListView.setSelection(queryDocumentSnapshots.size()-1);
                 // Update timestamp of oldest loaded message
-                mOldestLoaded = mMessageAdapter.getItem(0).getTimestamp();
+                if (mMessageAdapter.getCount() != 0) {
+                    mOldestLoaded = mMessageAdapter.getItem(0).getTimestamp();
+                }
                 // Inform the OnScrollListener that the app is neither starting nor loading any more.
                 isStarting = false;
                 isLoading = false;
