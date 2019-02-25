@@ -121,16 +121,8 @@ public class ChatRoomActivity extends AppCompatActivity {
             finish();
         }
 
-        SharedPreferences chatRoomsPref = this.getSharedPreferences(
+        final SharedPreferences chatRoomsPref = this.getSharedPreferences(
                 getString(R.string.preference_file_key), Context.MODE_PRIVATE);
-        if (!chatRoomsPref.contains(mChatRoomName)) {
-            DialogFragment dialog = new AskForNotificationDialogFragment();
-            Bundle roomBundle = new Bundle(1);
-            roomBundle.putString("roomName", mChatRoomName);
-            dialog.setArguments(roomBundle);
-            dialog.show(getSupportFragmentManager(), "Ask about notifications");
-            startService(new Intent(this, NotificationService.class));
-        }
 
         // Instantiate Views
         mMessageListView = (ListView) findViewById(R.id.messageListView);
@@ -207,6 +199,16 @@ public class ChatRoomActivity extends AppCompatActivity {
 
                 // Clear input box
                 mMessageEditText.setText("");
+
+                // If user has not already been asked, ask whether they want notifications from this room
+                if (!chatRoomsPref.contains(mChatRoomName)) {
+                    DialogFragment dialog = new AskForNotificationDialogFragment();
+                    Bundle roomBundle = new Bundle(1);
+                    roomBundle.putString("roomName", mChatRoomName);
+                    dialog.setArguments(roomBundle);
+                    dialog.show(getSupportFragmentManager(), "Ask about notifications");
+                    startNotificationService();
+                }
             }
         });
 
@@ -257,6 +259,10 @@ public class ChatRoomActivity extends AppCompatActivity {
 
         mFirebaseStorage = FirebaseStorage.getInstance();
         mChatPhotosStorageReference = mFirebaseStorage.getReference().child("chat_photos");
+    }
+
+    private void startNotificationService() {
+        startService(new Intent(this, NotificationService.class));
     }
 
     @Override
