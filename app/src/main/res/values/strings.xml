@@ -21,4 +21,5 @@
     <string name="button_no">No</string>
     <string name="preference_file_key">chatrooms</string>
     <string name="time_exited_key">timeExited</string>
+    <string name="enter_message">Enter message here</string>
 </resources>

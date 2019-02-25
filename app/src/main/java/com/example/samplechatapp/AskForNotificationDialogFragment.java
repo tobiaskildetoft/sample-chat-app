@@ -7,15 +7,15 @@ import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.v4.app.DialogFragment;
-
-import com.example.samplechatapp.R;
-
+/*
+* Dialog that asks whether user would like to receive notifications from the calling chatroom
+ */
 public class AskForNotificationDialogFragment extends DialogFragment {
-    // private Bundle contentBundle = getArguments();
-    // private String mErrorMessage = contentBundle.getString("errorMessage", "not found");
 
     @Override
     public Dialog onCreateDialog(Bundle savedInstance){
+        // Shared preference with list of room names with either "true" or "false"
+        // Depending on whether user wishes notifications from that room
         final SharedPreferences chatRoomsPref = this.getActivity().getSharedPreferences(
                 getString(R.string.preference_file_key), Context.MODE_PRIVATE);
         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());

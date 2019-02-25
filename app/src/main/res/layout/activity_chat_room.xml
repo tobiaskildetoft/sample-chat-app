@@ -46,7 +46,8 @@
             android:layout_weight="1"
             android:inputType="text"
             android:singleLine="true"
-            android:imeOptions="actionDone"/>
+            android:imeOptions="actionDone"
+            android:hint="@string/enter_message"/>
 
         <Button
             android:id="@+id/sendButton"

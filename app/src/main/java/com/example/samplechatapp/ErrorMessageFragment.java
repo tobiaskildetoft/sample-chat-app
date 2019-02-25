@@ -5,7 +5,9 @@ import android.app.Dialog;
 import android.content.DialogInterface;
 import android.os.Bundle;
 import android.support.v4.app.DialogFragment;
-
+/*
+* Display an error message if log in fails
+ */
 public class ErrorMessageFragment extends DialogFragment {
     // private Bundle contentBundle = getArguments();
     // private String mErrorMessage = contentBundle.getString("errorMessage", "not found");

@@ -60,7 +60,9 @@ import java.util.List;
 import javax.annotation.Nullable;
 
 import static com.google.firebase.firestore.DocumentChange.Type.ADDED;
-
+/*
+* Displays the room with name given in extras.chatRoomName
+ */
 public class ChatRoomActivity extends AppCompatActivity {
 
     // Constants for activity results
@@ -71,19 +73,19 @@ public class ChatRoomActivity extends AppCompatActivity {
     public static final int DEFAULT_MSG_LENGTH_LIMIT = 500;
     public static final int NUMBER_OF_MESSAGES_TO_LOAD = 50;
 
+    // Lets the scrollListener know if the Activity is starting or loading more messages.
+    // And lets the service know if it is currently active.
     private boolean isStarting;
     private boolean isLoading;
     private static boolean isActive;
-
     public static boolean getIsActive() {
         return isActive;
     }
 
-    private static List<String> hasAskedAboutNotificationsFor = new ArrayList<>();
-
     private String mChatRoomName;
     private String mUsername;
     private String mUserAvatarUrl;
+    // Keep check of what time the activity became active and what the oldest displayed message is
     private long mTimeOpened;
     private long mOldestLoaded;
 
@@ -111,34 +113,35 @@ public class ChatRoomActivity extends AppCompatActivity {
 
         isStarting = true;
 
-
-
+        // Should never be used for posting.
         mUsername = "Anonymous";
 
+        // Find name of room
         mChatRoomName = getIntent().getExtras().getString("chatRoomName", null);
         if (mChatRoomName == null) {
             // Got sent here with wrong intent
             finish();
         }
 
+        // List of rooms that have been asked about notifications with answer
         final SharedPreferences chatRoomsPref = this.getSharedPreferences(
                 getString(R.string.preference_file_key), Context.MODE_PRIVATE);
 
         // Instantiate Views
-        mMessageListView = (ListView) findViewById(R.id.messageListView);
-        mPhotoPickerButton = (ImageButton) findViewById(R.id.photoPickerButton);
-        mMessageEditText = (EditText) findViewById(R.id.messageEditText);
-        mSendButton = (Button) findViewById(R.id.sendButton);
+        mMessageListView = findViewById(R.id.messageListView);
+        mPhotoPickerButton = findViewById(R.id.photoPickerButton);
+        mMessageEditText = findViewById(R.id.messageEditText);
+        mSendButton = findViewById(R.id.sendButton);
 
         // Add scroll to add items
         mMessageListView.setOnScrollListener(new AbsListView.OnScrollListener() {
             @Override
             public void onScrollStateChanged(AbsListView view, int scrollState) {
-
             }
 
             @Override
             public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
+                // Only load messages at top if not already doing so and only if not starting
                 if (mMessageListView.getFirstVisiblePosition() == 0 && !isStarting && !isLoading && !(mOldestLoaded < 0)) {
                     isLoading = true;
                     populateMessageList();
@@ -170,9 +173,10 @@ public class ChatRoomActivity extends AppCompatActivity {
             public void afterTextChanged(Editable editable) {
             }
         });
+        // Only allow input up to the specified length.
         mMessageEditText.setFilters(new InputFilter[]{new InputFilter.LengthFilter(DEFAULT_MSG_LENGTH_LIMIT)});
 
-        // Make the return key send the message
+        // Make the return key click the send button
         mMessageEditText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
@@ -256,11 +260,11 @@ public class ChatRoomActivity extends AppCompatActivity {
         };
 
         mDatabase = FirebaseFirestore.getInstance();
-
         mFirebaseStorage = FirebaseStorage.getInstance();
         mChatPhotosStorageReference = mFirebaseStorage.getReference().child("chat_photos");
     }
 
+    // Starts the service responsible for delivering notifications
     private void startNotificationService() {
         startService(new Intent(this, NotificationService.class));
     }
@@ -279,6 +283,7 @@ public class ChatRoomActivity extends AppCompatActivity {
             }
         } else if (requestCode == RC_PHOTO_PICKER && resultCode == RESULT_OK) {
             Uri selectedImageUri = data.getData();
+            // this will be null if image is picked from camera
             if (selectedImageUri == null) {
                 if (ContextCompat.checkSelfPermission(this,
                         Manifest.permission.WRITE_EXTERNAL_STORAGE)
@@ -310,6 +315,7 @@ public class ChatRoomActivity extends AppCompatActivity {
         }
     }
 
+    // Save a bitmap to file and retrieve the Uri
     public Uri uriFromImage(Context inContext, Bitmap image) {
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
         image.compress(Bitmap.CompressFormat.JPEG, 100, bytes);
@@ -317,6 +323,8 @@ public class ChatRoomActivity extends AppCompatActivity {
         return Uri.parse(path);
     }
 
+    // When user is signed in, set their user name and avatar
+    // Also load messages and start database listeners to make sure chat is kept updated
     private void onSignedInInitialize(String displayName, Uri photoUrl) {
         if (ContextCompat.checkSelfPermission(this,
                 Manifest.permission.WRITE_EXTERNAL_STORAGE)
@@ -376,7 +384,6 @@ public class ChatRoomActivity extends AppCompatActivity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_chat_room, menu);
         return true;
     }
@@ -424,6 +431,7 @@ public class ChatRoomActivity extends AppCompatActivity {
     protected void onPause() {
         super.onPause();
         isActive = false;
+        // Register the time the activity became inactive to make sure notifications only come for new messages
         SharedPreferences timeExited = this.getSharedPreferences(
                 getString(R.string.time_exited_key), Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = timeExited.edit();
@@ -443,6 +451,7 @@ public class ChatRoomActivity extends AppCompatActivity {
 
     public void populateMessageList() {
         isLoading = true;
+        // Get the appropriate number of messages starting from the oldest loaded and going backwards
         mDatabase.collection("chatrooms")
                 .document(mChatRoomName)
                 .collection("messages")

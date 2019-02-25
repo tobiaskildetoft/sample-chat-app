@@ -1,5 +1,7 @@
 package com.example.samplechatapp;
-
+/*
+* Chat message with message text, name of sender, timestamp and Url's for avatar and if photo is uploaded
+ */
 public class ChatMessage {
 
     private String text;
@@ -18,8 +20,6 @@ public class ChatMessage {
         this.avatarUrl = avatarUrl;
         this.photoUrl = photoUrl;
     }
-
-    // TODO: negative timestamp for empty message
 
     public String getText() {
         return text;

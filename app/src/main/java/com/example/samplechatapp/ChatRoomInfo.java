@@ -30,7 +30,6 @@ public class ChatRoomInfo {
         this.timestamp = timestamp;
     }
 
-
     public String getDescription() {
         return description;
     }

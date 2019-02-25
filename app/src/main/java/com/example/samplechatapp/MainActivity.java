@@ -48,14 +48,20 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+/*
+* Displays a list of chatrooms, which is populated automatically from the database
+* and sorted by newest message.
+* Can be refreshed either from options menu or by swiping.
+ */
+
 public class MainActivity extends AppCompatActivity {
 
     // Constants for activity results
     private final static int RC_SIGN_IN = 1;
     private static final int MY_PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE = 1;
 
+    // Let's service know if Activity is active
     private static boolean isActive;
-
     public static boolean getIsActive() {
         return isActive;
     }
@@ -65,16 +71,6 @@ public class MainActivity extends AppCompatActivity {
     private ListView mChatRoomsList;
 
     private ChatRoomAdapter mChatRoomAdapter;
-
-
-    // Private methods
-    private void refresh() {
-        // TODO: Make this feel less like it refreshes everything and make it just update the list
-
-        Intent intent = new Intent(this, MainActivity.class);
-        finish();
-        startActivity(intent);
-    }
 
 
     // member variables for Firebase objects
@@ -87,18 +83,9 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // Test code to clear the chatroomspref when needed
-        /*
-        SharedPreferences chatRoomsPref = this.getSharedPreferences(
-                getString(R.string.preference_file_key), Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = chatRoomsPref.edit();
-        editor.clear();
-        editor.commit();
-        */
-
         // Instantiate Views
-        mSwipeRefresh = (SwipeRefreshLayout) findViewById(R.id.swipeRefresh);
-        mChatRoomsList = (ListView) findViewById(R.id.chatRoomListView);
+        mSwipeRefresh = findViewById(R.id.swipeRefresh);
+        mChatRoomsList = findViewById(R.id.chatRoomListView);
 
         // Add adapter to the list of chat rooms
         List<ChatRoomInfo> chatRooms = new ArrayList<>();
@@ -160,6 +147,7 @@ public class MainActivity extends AppCompatActivity {
         mDatabase = FirebaseFirestore.getInstance();
     }
 
+    // Start the service responsible for notifications
     private void startNotificationService() {
         Intent intent = new Intent(this, NotificationService.class);
         startService(intent);
@@ -241,6 +229,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onPause() {
         super.onPause();
         isActive = false;
+        // Keep track of when activity became inactive to only receive notifications on new messages
         SharedPreferences timeExited = this.getSharedPreferences(
                 getString(R.string.time_exited_key), Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = timeExited.edit();
@@ -255,5 +244,13 @@ public class MainActivity extends AppCompatActivity {
     public void showError() {
         DialogFragment dialog = new ErrorMessageFragment();
         dialog.show(getSupportFragmentManager(), "ErrorMessage");
+    }
+
+    // Refresh the activity
+    private void refresh() {
+
+        Intent intent = new Intent(this, MainActivity.class);
+        finish();
+        startActivity(intent);
     }
 }

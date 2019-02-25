@@ -3,7 +3,9 @@ package com.example.samplechatapp;
 import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-
+/*
+* Splash screen to show when loading the main activity
+ */
 public class SplashActivity extends AppCompatActivity {
 
     @Override

@@ -23,8 +23,8 @@ public class ChatRoomAdapter extends ArrayAdapter<ChatRoomInfo> {
             convertView = ((Activity) getContext()).getLayoutInflater().inflate(R.layout.chat_room_info, parent, false);
         }
 
-        TextView chatRoomName = (TextView) convertView.findViewById(R.id.chatRoomNameView);
-        TextView descriptionView = (TextView) convertView.findViewById(R.id.descriptionView);
+        TextView chatRoomName = convertView.findViewById(R.id.chatRoomNameView);
+        TextView descriptionView = convertView.findViewById(R.id.descriptionView);
 
         ChatRoomInfo chatRoom = getItem(position);
 

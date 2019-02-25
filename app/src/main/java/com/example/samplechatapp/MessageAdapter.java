@@ -49,6 +49,7 @@ public class MessageAdapter extends ArrayAdapter<ChatMessage> {
             messageTextView.setText(message.getText());
         }
         authorTextView.setText(message.getName());
+        // Negative timestamp indicates that the message is a dummy
         if (message.getTimestamp() >= 0) {
             DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm");
             Date timestampDate = new Date(message.getTimestamp());

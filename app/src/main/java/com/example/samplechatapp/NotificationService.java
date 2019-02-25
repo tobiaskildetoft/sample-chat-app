@@ -33,8 +33,6 @@ import static com.google.firebase.firestore.DocumentChange.Type.ADDED;
 public class NotificationService extends IntentService {
 
     private FirebaseFirestore mDatabase;
-    private List<com.google.firebase.firestore.EventListener<QuerySnapshot>> mDatabaseListeners = new ArrayList<>();
-    // private List<ListenerRegistration> mListenerRegistrations = new ArrayList<>();
 
     public NotificationService() {
         super("NotificationService");
@@ -53,14 +51,12 @@ public class NotificationService extends IntentService {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        // List of chatrooms and whether to listen for new messages there
         SharedPreferences chatRoomsPref = this.getSharedPreferences(
                 getString(R.string.preference_file_key), Context.MODE_PRIVATE);
+        // Only messages newer than the time here should give notifications
         final SharedPreferences timeExited = this.getSharedPreferences(
                 getString(R.string.time_exited_key), Context.MODE_PRIVATE);
-        mDatabaseListeners.clear();
-        // mListenerRegistrations.clear();
-        EventListener<QuerySnapshot> dummyListener;
-        // ListenerRegistration dummyRegistration;
         for (final String room: chatRoomsPref.getAll().keySet()) {
             if (chatRoomsPref.getBoolean(room, false)) {
                 createNotificationChannel(room);
@@ -74,6 +70,7 @@ public class NotificationService extends IntentService {
                                     for (DocumentChange dc : queryDocumentSnapshots.getDocumentChanges()) {
                                         if (dc.getType() == ADDED) {
                                             ChatMessage chatMessage = dc.getDocument().toObject(ChatMessage.class);
+                                            // Only notify if activities are inactive and the message is new
                                             if (!MainActivity.getIsActive() && !ChatRoomActivity.getIsActive()) {
                                                 if (chatMessage.getTimestamp() > timeExited.getLong("timeExited", -1)) {
                                                     notifyNewMessage(room);
@@ -89,6 +86,7 @@ public class NotificationService extends IntentService {
 
         return super.onStartCommand(intent, flags, startId);
     }
+    // Create and send a notification about a new message in the room
     public void notifyNewMessage(String room) {
 
         Intent intent = new Intent(this, ChatRoomActivity.class);
@@ -125,13 +123,5 @@ public class NotificationService extends IntentService {
             NotificationManager notificationManager = getSystemService(NotificationManager.class);
             notificationManager.createNotificationChannel(channel);
         }
-    }
-
-    @Override
-    public void onDestroy() {
-        //for (ListenerRegistration registration: mListenerRegistrations) {
-        //    registration.remove();
-        //}
-        super.onDestroy();
     }
 }
