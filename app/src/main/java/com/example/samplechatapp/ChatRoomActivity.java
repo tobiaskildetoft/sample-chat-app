@@ -418,6 +418,11 @@ public class ChatRoomActivity extends AppCompatActivity {
     protected void onPause() {
         super.onPause();
         isActive = false;
+        SharedPreferences timeExited = this.getSharedPreferences(
+                getString(R.string.time_exited_key), Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = timeExited.edit();
+        editor.putLong("timeExited", System.currentTimeMillis());
+        editor.commit();
         if (mAuthStateListener != null) {
             mFirebaseAuth.removeAuthStateListener(mAuthStateListener);
         }
@@ -444,7 +449,9 @@ public class ChatRoomActivity extends AppCompatActivity {
                     mMessageAdapter.insert(chatMessage, 0);
                 }
                 // Go to the appropriate place in the list to not trigger the loading of more messages.
-                mMessageListView.setSelection(queryDocumentSnapshots.size()-1);
+                if (!isStarting) {
+                    mMessageListView.setSelection(queryDocumentSnapshots.size() - 1);
+                }
                 // Update timestamp of oldest loaded message
                 if (mMessageAdapter.getCount() != 0) {
                     mOldestLoaded = mMessageAdapter.getItem(0).getTimestamp();

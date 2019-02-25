@@ -55,6 +55,8 @@ public class NotificationService extends IntentService {
     public int onStartCommand(Intent intent, int flags, int startId) {
         SharedPreferences chatRoomsPref = this.getSharedPreferences(
                 getString(R.string.preference_file_key), Context.MODE_PRIVATE);
+        final SharedPreferences timeExited = this.getSharedPreferences(
+                getString(R.string.time_exited_key), Context.MODE_PRIVATE);
         mDatabaseListeners.clear();
         // mListenerRegistrations.clear();
         EventListener<QuerySnapshot> dummyListener;
@@ -71,36 +73,17 @@ public class NotificationService extends IntentService {
                                     // No errors, go ahead and use result
                                     for (DocumentChange dc : queryDocumentSnapshots.getDocumentChanges()) {
                                         if (dc.getType() == ADDED) {
+                                            ChatMessage chatMessage = dc.getDocument().toObject(ChatMessage.class);
                                             if (!MainActivity.getIsActive() && !ChatRoomActivity.getIsActive()) {
-                                                notifyNewMessage(room);
+                                                if (chatMessage.getTimestamp() > timeExited.getLong("timeExited", -1)) {
+                                                    notifyNewMessage(room);
+                                                }
                                             }
-                                            break;
                                         }
                                     }
                                 }
                             }
                         });
-                //dummyListener = new com.google.firebase.firestore.EventListener<QuerySnapshot>() {
-                //    @Override
-                //    public void onEvent(@Nullable QuerySnapshot queryDocumentSnapshots, @Nullable FirebaseFirestoreException e) {
-                //        if (e == null) {
-                //            // No errors, go ahead and use result
-                //            for (DocumentChange dc : queryDocumentSnapshots.getDocumentChanges()) {
-                //                if (dc.getType() == ADDED) {
-                //                    // if (!MainActivity.getIsActive() && !ChatRoomActivity.getIsActive()) {
-                //                        notifyNewMessage(room);
-                //                    //}
-                //                    break;
-                //                }
-                //            }
-                //        }
-                //    }
-                //};
-                // dummyRegistration = mDatabase.collection("chatrooms")
-                //        .document(room).collection("messages")
-                //        .addSnapshotListener(dummyListener);
-
-                //mListenerRegistrations.add(dummyRegistration);
             }
         }
 

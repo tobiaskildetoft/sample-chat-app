@@ -20,4 +20,5 @@
     <string name="button_yes">Yes</string>
     <string name="button_no">No</string>
     <string name="preference_file_key">chatrooms</string>
+    <string name="time_exited_key">timeExited</string>
 </resources>

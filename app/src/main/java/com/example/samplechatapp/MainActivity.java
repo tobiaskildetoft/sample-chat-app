@@ -241,6 +241,11 @@ public class MainActivity extends AppCompatActivity {
     protected void onPause() {
         super.onPause();
         isActive = false;
+        SharedPreferences timeExited = this.getSharedPreferences(
+                getString(R.string.time_exited_key), Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = timeExited.edit();
+        editor.putLong("timeExited", System.currentTimeMillis());
+        editor.commit();
         // Remove the AuthState listener if it exists.
         if (mAuthStateListener != null) {
             mFirebaseAuth.removeAuthStateListener(mAuthStateListener);
