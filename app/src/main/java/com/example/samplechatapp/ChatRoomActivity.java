@@ -3,6 +3,7 @@ package com.example.samplechatapp;
 import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.net.Uri;
@@ -72,10 +73,13 @@ public class ChatRoomActivity extends AppCompatActivity {
 
     private boolean isStarting;
     private boolean isLoading;
+    private static boolean isActive;
 
+    public static boolean getIsActive() {
+        return isActive;
+    }
 
-    private boolean hasPermission;
-    private boolean hasAskedPermission;
+    private static List<String> hasAskedAboutNotificationsFor = new ArrayList<>();
 
     private String mChatRoomName;
     private String mUsername;
@@ -107,12 +111,25 @@ public class ChatRoomActivity extends AppCompatActivity {
 
         isStarting = true;
 
+
+
         mUsername = "Anonymous";
 
         mChatRoomName = getIntent().getExtras().getString("chatRoomName", null);
         if (mChatRoomName == null) {
             // Got sent here with wrong intent
             finish();
+        }
+
+        SharedPreferences chatRoomsPref = this.getSharedPreferences(
+                getString(R.string.preference_file_key), Context.MODE_PRIVATE);
+        if (!chatRoomsPref.contains(mChatRoomName)) {
+            DialogFragment dialog = new AskForNotificationDialogFragment();
+            Bundle roomBundle = new Bundle(1);
+            roomBundle.putString("roomName", mChatRoomName);
+            dialog.setArguments(roomBundle);
+            dialog.show(getSupportFragmentManager(), "Ask about notifications");
+            startService(new Intent(this, NotificationService.class));
         }
 
         // Instantiate Views
@@ -308,6 +325,7 @@ public class ChatRoomActivity extends AppCompatActivity {
         }
         populateMessageList();
         attachDatabaseListener();
+        startService(new Intent(this, NotificationService.class));
     }
 
     private void attachDatabaseListener() {
@@ -375,12 +393,14 @@ public class ChatRoomActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        isActive = true;
         mTimeOpened = System.currentTimeMillis();
         mOldestLoaded = mTimeOpened;
         mFirebaseAuth.addAuthStateListener(mAuthStateListener);
     }
 
     private void onSignedOutCleanup() {
+        stopService(new Intent(this, NotificationService.class));
         mUsername = "Anonymous";
         mUserAvatarUrl = null;
         mMessageAdapter.clear();
@@ -397,6 +417,7 @@ public class ChatRoomActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
+        isActive = false;
         if (mAuthStateListener != null) {
             mFirebaseAuth.removeAuthStateListener(mAuthStateListener);
         }

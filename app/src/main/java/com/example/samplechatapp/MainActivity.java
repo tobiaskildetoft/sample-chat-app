@@ -11,8 +11,10 @@ import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -52,6 +54,12 @@ public class MainActivity extends AppCompatActivity {
     private final static int RC_SIGN_IN = 1;
     private static final int MY_PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE = 1;
 
+    private static boolean isActive;
+
+    public static boolean getIsActive() {
+        return isActive;
+    }
+
     // member variables for the Views in the layout
     private SwipeRefreshLayout mSwipeRefresh;
     private ListView mChatRoomsList;
@@ -78,6 +86,15 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        // Test code to clear the chatroomspref when needed
+        /*
+        SharedPreferences chatRoomsPref = this.getSharedPreferences(
+                getString(R.string.preference_file_key), Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = chatRoomsPref.edit();
+        editor.clear();
+        editor.commit();
+        */
 
         // Instantiate Views
         mSwipeRefresh = (SwipeRefreshLayout) findViewById(R.id.swipeRefresh);
@@ -118,7 +135,7 @@ public class MainActivity extends AppCompatActivity {
             public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
                 FirebaseUser user = firebaseAuth.getCurrentUser();
                 if (user != null) {
-                    // User is logged in
+                    startNotificationService();
                 }
                 else {
                     // User is not logged in
@@ -143,6 +160,11 @@ public class MainActivity extends AppCompatActivity {
         mDatabase = FirebaseFirestore.getInstance();
     }
 
+    private void startNotificationService() {
+        Intent intent = new Intent(this, NotificationService.class);
+        startService(intent);
+    }
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_main, menu);
@@ -159,6 +181,7 @@ public class MainActivity extends AppCompatActivity {
                 refresh();
                 return true;
             case R.id.menu_logout:
+                stopService(new Intent(this, NotificationService.class));
                 // Sign out the user
                 AuthUI.getInstance().signOut(this);
                 return true;
@@ -184,6 +207,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        isActive = true;
 
         // Add the listener to check whether user is signed in.
         mFirebaseAuth.addAuthStateListener(mAuthStateListener);
@@ -216,6 +240,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
+        isActive = false;
         // Remove the AuthState listener if it exists.
         if (mAuthStateListener != null) {
             mFirebaseAuth.removeAuthStateListener(mAuthStateListener);
